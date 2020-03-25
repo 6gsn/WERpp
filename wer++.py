@@ -14,7 +14,6 @@ from optparse import OptionParser
 import codecs
 import array
 from copy import copy
-from termcolor import colored
 
 class FileReader:
   def __init__(self,f,buffer_size=1024):
@@ -306,7 +305,7 @@ def calculate_statistics(rec_file, ref_file, options):
 
     ref_count+= len(w_j)
 
-    if options.v == None and options.n == 0 and options.color == None and \
+    if options.v == None and options.n == 0 and \
           options.vocab == None and options.key_pressed == None:
       ins_naive = del_naive = subs_naive = 0
       if len(w_i) == 0:
@@ -331,7 +330,6 @@ def calculate_statistics(rec_file, ref_file, options):
           rec = num_to_char(rec)
           ref = num_to_char(ref)
 
-        #color the operations
         if options.v == True:
           str_out = ""
           if edition == 'S':
@@ -438,11 +436,11 @@ def calculate_statistics(rec_file, ref_file, options):
       [n, e] = events[i]
       s=""
       if 'S' in e:
-        s=colored(e[2]+join_symbol+e[1], 'blue')
+        s=f'[{e[2]+join_symbol+e[1]}]'
       elif 'I' in e:
-        s=colored(e[1], 'green')
+        s=f'!{e[1]}'
       elif 'D' in e:
-        s=colored(e[1], 'red')
+        s=f'?{e[1]}'
       acc+=n
       stdout.write("[Worst-%.2d] %.4f%% %.4f%% - %s\n" %(len(events)-1-i+1, float(n)/ref_count*100,float(acc)/ref_count*100, s))
 
@@ -462,9 +460,6 @@ def main():
      action="store_true", dest="cer", help='Calculate Character Error Rate')
   cmd_parser.add_option('-f', '--excp-file',
      action="store", type="string", dest="excp_file",  help='File containing the characters to delete')
-  cmd_parser.add_option('-c', '--colors',
-      action="store_true",dest="color",
-      help='Color the output')
   cmd_parser.add_option('-O', '--vocab',
      action="store", type="string", dest="vocab", default=None, help='Vocabulary to count OOVs')
   cmd_parser.add_option('-K','--number-keys',
