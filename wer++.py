@@ -14,6 +14,7 @@ from optparse import OptionParser
 import codecs
 import array
 from copy import copy
+from termcolor import colored
 
 class FileReader:
   def __init__(self,f,buffer_size=1024):
@@ -59,10 +60,10 @@ class D(dict):
 
 #awk style dictionary
 class Dincr():
-  def __init__(this):
-    this.n = 0
-    this.anti_d = {}
-    this.d = {}
+  def __init__(self):
+    self.n = 0
+    self.anti_d = {}
+    self.d = {}
   def dic(self, i):
     if i not in self.d:
       self.d[i] = self.n
@@ -71,33 +72,6 @@ class Dincr():
     return self.d[i]
   def inv(self, i):
     return self.anti_d[i]
-
-class color:
-  d={}; RESET_SEQ=""
-  def __init__(self,c):
-    if c == True:
-      self.d['K']="\033[0;30m"    # black
-      self.d['R']="\033[0;31m"    # red
-      self.d['G']="\033[0;32m"    # green
-      self.d['Y']="\033[0;33m"    # yellow
-      self.d['B']="\033[0;34m"    # blue
-      self.d['M']="\033[0;35m"    # magenta
-      self.d['C']="\033[0;36m"    # cyan
-      self.d['W']="\033[0;37m"    # white
-      self.RESET_SEQ = "\033[0m"
-    else:
-      self.d['K']="["
-      self.d['R']="<"
-      self.d['G']="["
-      self.d['Y']="["
-      self.d['B']="["
-      self.d['M']="["
-      self.d['C']="["
-      self.d['W']="["
-      self.RESET_SEQ = "]"
-
-  def c_string(self,color,string):
-    return self.d[color]+string+self.RESET_SEQ
 
 # Normal compare strings
 def string_equal(str1,str2):
@@ -123,23 +97,23 @@ def char_to_num(x):
 
 def num_to_char(j):
   if j != "__":
-    return unichr(int(j))
+    return chr(int(j))
   else:
     return j
 
 class e_op:
-  def __init__(this,ins,dels,subs):
-    this.i = ins; this.d = dels; this.s = subs
-  def cost(this):
-    return this.i + this.d + this.s
-  def ins(this):
-    return this.i
-  def dels(this):
-    return this.d
-  def subs(this):
-    return this.s
-  def __repr__(this):
-    return "I:%d D:%d S:%d" %(this.i,this.d,this.s)
+  def __init__(self,ins,dels,subs):
+    self.i = ins; self.d = dels; self.s = subs
+  def cost(self):
+    return self.i + self.d + self.s
+  def ins(self):
+    return self.i
+  def dels(self):
+    return self.d
+  def subs(self):
+    return self.s
+  def __repr__(self):
+    return "I:%d D:%d S:%d" %(self.i,self.d,self.s)
 
 #only computes the cost of the best path    
 def lev_changes_naive(str1, str2, eq_func=string_equal):
@@ -147,12 +121,12 @@ def lev_changes_naive(str1, str2, eq_func=string_equal):
   d_prev=[]
   d_curr=[]
 
-  for i in xrange(len(str1)+1):
+  for i in range(len(str1)+1):
     d_prev.append(e_op(0,i,0))
     d_curr.append(e_op(0,0,0))
 
-  for i in xrange(1, len(str2)+1):
-    for j in xrange(1, len(str1)+1):
+  for i in range(1, len(str2)+1):
+    for j in range(1, len(str1)+1):
       if j == 1:
         d_curr[0].i = i
 
@@ -246,7 +220,6 @@ def calculate_statistics(rec_file, ref_file, options):
           vocab[words.dic(j)]=1
 
   join_symbol="@"
-  colors=color(options.color)
   oovSubs=0
   oovIns=0
   oovs = 0
@@ -268,9 +241,6 @@ def calculate_statistics(rec_file, ref_file, options):
     for i in f.readlines():
       excps.append(i[:-1])
     f.close()
-
-  if options.v == True:
-    stdout.write(colors.RESET_SEQ)
 
   i = rec_file.readline()
   while len(i) != 0:
@@ -320,7 +290,7 @@ def calculate_statistics(rec_file, ref_file, options):
               rec = num_to_char(index)
             else:
               rec = words.inv(index)
-            str_out = "%s" %(colors.c_string("R",rec).encode("utf-8"))
+            str_out = "%s" %(rec)
             if not options.cer:
               str_out = str_out+" "
             elif "__" in str_out:
@@ -365,17 +335,17 @@ def calculate_statistics(rec_file, ref_file, options):
         if options.v == True:
           str_out = ""
           if edition == 'S':
-            str_out = "%s" %(colors.c_string("B",rec+join_symbol+ref).encode("utf-8"))
+            str_out = "[%s@%s]" %(rec, ref)
           elif edition == 'A':
-            str_out = "%s" %(colors.c_string("Y",rec+join_symbol+ref).encode("utf-8"))
+            str_out = "[%s@%s]" %(rec, ref)
           elif edition == 'I':
-            str_out = "%s" %(colors.c_string("G",ref).encode("utf-8"))
+            str_out = "[!%s]" %(ref)
           elif edition == 'D':
-            str_out = "%s" %(colors.c_string("R",rec).encode("utf-8"))
+            str_out = "[?%s]" %(rec)
           elif edition == 'O':
-            str_out = "%s" %(colors.c_string("Y",ref).encode("utf-8"))
+            str_out = "%s" %(ref)
           else:
-            str_out = "%s" %ref.encode("utf-8")
+            str_out = "%s" %ref
           if not options.cer:
             str_out = str_out+" "
           elif "__" in str_out:
@@ -468,13 +438,13 @@ def calculate_statistics(rec_file, ref_file, options):
       [n, e] = events[i]
       s=""
       if 'S' in e:
-        s=colors.c_string("B",e[2]+join_symbol+e[1])
+        s=colored(e[2]+join_symbol+e[1], 'blue')
       elif 'I' in e:
-        s=colors.c_string("G",e[1])
+        s=colored(e[1], 'green')
       elif 'D' in e:
-        s=colors.c_string("R",e[1])
+        s=colored(e[1], 'red')
       acc+=n
-      stdout.write("[Worst-%.2d] %.4f%% %.4f%% - %s\n" %(len(events)-1-i+1, float(n)/ref_count*100,float(acc)/ref_count*100, s.encode("utf-8")))
+      stdout.write("[Worst-%.2d] %.4f%% %.4f%% - %s\n" %(len(events)-1-i+1, float(n)/ref_count*100,float(acc)/ref_count*100, s))
 
 def main():
   cmd_parser = OptionParser(usage="usage: %prog [options] recognized_file reference_file")
